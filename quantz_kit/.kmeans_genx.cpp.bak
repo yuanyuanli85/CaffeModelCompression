@@ -1,0 +1,39 @@
+/**             
+***
+*** Copyright  (C) 1985-2011 Intel Corporation. All rights reserved.
+***
+*** The information and source code contained herein is the exclusive
+*** property of Intel Corporation. and may not be disclosed, examined
+*** or reproduced in whole or in part without explicit written authorization
+*** from the company.
+***
+*** ----------------------------------------------------------------------------
+**/ 
+#include <cm/cm.h>
+
+extern "C" _GENX_MAIN_ void
+linear(SurfaceIndex ibuf, SurfaceIndex obuf, uint h_pos, uint v_pos)
+{
+    matrix<uchar, 8, 32> in;
+    matrix<uchar, 6, 24> out;
+    matrix<float, 6, 24> m;
+
+    read(ibuf, h_pos*24, v_pos*6, in); 
+
+    m  = in.select<6,1,24,1>(1,3);
+
+    m += in.select<6,1,24,1>(0,0);
+    m += in.select<6,1,24,1>(0,3);
+    m += in.select<6,1,24,1>(0,6);
+
+    m += in.select<6,1,24,1>(1,0);
+    m += in.select<6,1,24,1>(1,6);
+
+    m += in.select<6,1,24,1>(2,0);
+    m += in.select<6,1,24,1>(2,3);
+    m += in.select<6,1,24,1>(2,6);
+
+    out = m * 0.111f;
+
+    write(obuf, h_pos*24, v_pos*6, out); 
+}
