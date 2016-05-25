@@ -9,15 +9,21 @@
 #include <omp.h>
 //#include "KmDriver.h"
 
-#define MAX_THREAD_NUM 16
 
 using namespace std;
 
 void kmeans_cluster(int *cLabel, float *cCentro, float *cNodes, int nNode, int nDimension, int nCluster, float *cInitCentro=nullptr, int max_iter=1000)
 { 
+	// get threads number from the env variable
+	int tSize;
+	if (const char* env_omp_tnum = getenv("OMP_NUM_THREADS"))
+		tSize = atoi(env_omp_tnum);
+	else
+		tSize = omp_get_num_procs();
+		
 	// generate initial centroids
 	float max_global=numeric_limits<float>::min(), min_global=numeric_limits<float>::max();
-	float max_private[MAX_THREAD_NUM], min_private[MAX_THREAD_NUM];
+	float max_private[tSize], min_private[tSize];
 	if (cInitCentro != nullptr)
 		memcpy(cCentro, cInitCentro, sizeof(float)*nCluster*nDimension);
 	else
@@ -35,7 +41,7 @@ void kmeans_cluster(int *cLabel, float *cCentro, float *cNodes, int nNode, int n
 		max_private[tid]=max;
 		min_private[tid]=min;
 }
-		for (int i=0; i<MAX_THREAD_NUM; i++)
+		for (int i=0; i<tSize; i++)
 		{
 			max_global = (max_global < max_private[i]) ? max_private[i] : max_global; 
 			min_global = (min_global > min_private[i]) ? min_private[i] : min_global; 
@@ -51,7 +57,6 @@ void kmeans_cluster(int *cLabel, float *cCentro, float *cNodes, int nNode, int n
 	float *cDistance = new float[nNode*nDimension];
 	int *cClusterSize = new int[nCluster];
 
-	const int tSize = MAX_THREAD_NUM; 
 	float *pCentroPos = new float[nCluster*tSize];
 	int *pClusterSize = new int[nCluster*tSize];
 	memset(pClusterSize, 0, sizeof(int)*nCluster*tSize);
